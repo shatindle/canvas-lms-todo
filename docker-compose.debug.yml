@@ -1,0 +1,6 @@
+services:
+  app:
+    ports:
+      - "9229:9229"
+    environment:
+      NODE_OPTIONS: --inspect=0.0.0.0:9229

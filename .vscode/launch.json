@@ -1,0 +1,25 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+        {
+            "command": "npm run dev",
+			"name": "Website",
+			"request": "launch",
+			"type": "node-terminal",
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "pwa-chrome",
+            "request": "launch",
+            "name": "Browser",
+            "url": "http://localhost:5173/",
+            "webRoot": "${workspaceFolder}/src"
+        }
+	],
+    "compounds": [
+        {
+            "name": "Watch Breakpoints",
+            "configurations": ["Website", "Browser"]
+        }
+    ]
+}
