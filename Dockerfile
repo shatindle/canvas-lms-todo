@@ -1,22 +1,33 @@
-FROM node:22-alpine AS build
+FROM node:24-alpine AS builder
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
-RUN npm ci
+RUN chown -R node:node /app
+USER node
 
-COPY . .
+COPY --chown=node:node package*.json ./
+RUN npm i
+
+COPY --chown=node:node . .
 RUN npm run build
+RUN { npm audit fix || true; }
 
-FROM node:22-alpine AS runtime
+FROM node:24-alpine AS runner
 
-WORKDIR /app
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
 ENV PORT=3000
 
-COPY --from=build /app/build ./build
-COPY --from=build /app/package.json ./package.json
+WORKDIR /app
+
+RUN chown -R node:node /app
+USER node
+
+COPY --chown=node:node package*.json ./
+RUN npm i --omit=dev
+RUN { npm audit fix || true; }
+
+COPY --from=builder /app/build ./build
 
 EXPOSE 3000
 

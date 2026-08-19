@@ -2,9 +2,21 @@ services:
   app:
     build:
       context: .
-    ports:
-      - "3000:3000"
+    restart: unless-stopped
     environment:
-      HOST: 0.0.0.0
-      PORT: 3000
       NODE_ENV: production
+    networks:
+      - app-network
+  tunnel:
+    image: cloudflare/cloudflared
+    restart: unless-stopped
+    command: tunnel run
+    networks:
+      - app-network
+    env_file:
+      - .env
+    depends_on:
+      - app
+
+networks:
+  app-network:
