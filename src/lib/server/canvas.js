@@ -128,6 +128,8 @@ function getDateByDayName(rangeStart, rangeEnd, targetDayName) {
   
   while (current <= rangeEnd) {
     if (current.getDay() === targetIndex) {
+      // advance the hours toward the end of the day
+      current.setHours(23, 59, 59);
       return current;
     }
     current.setDate(current.getDate() + 1);
