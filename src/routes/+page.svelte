@@ -209,7 +209,7 @@
                                 <ul>
                                     {#each student.results.late as assignment}
                                         <li>
-                                            <span class="course">{assignment.course}</span>
+                                            <span class="course" style="color:{stringToHexColor(assignment.course)}">{assignment.course}</span>
                                             <span class="assignment">{assignment.assignment}</span>
                                             <span class="due-date">{assignment.due?.toDateString()}</span>
                                         </li>
@@ -224,7 +224,7 @@
                                 <ul>
                                     {#each student.results.due as assignment}
                                         <li>
-                                            <span class="course">{assignment.course}</span>
+                                            <span class="course" style="color:{stringToHexColor(assignment.course)}">{assignment.course}</span>
                                             <span class="assignment">{assignment.assignment}</span>
                                         </li>
                                     {/each}
@@ -235,15 +235,18 @@
                         {#if student.grades.filter(t => t.grade !== 'A' && t.grade !== 'N/A').length > 0}
                             <div class="reason-section">
                                 <h4>Grades too low</h4>
+                                {#each student.grades.filter(t => t.grade !== 'A' && t.grade !== 'N/A') as grade}
+                                <h5 style="color:{stringToHexColor(grade.course)}">{grade.course} | Grade {grade.grade} | {grade.score}%</h5>
                                 <ul>
-                                    {#each student.grades.filter(t => t.grade !== 'A' && t.grade !== 'N/A') as grade}
-                                        <li>
-                                            <span class="course">{grade.course}</span>
-                                            <span class="grade-badge">{grade.grade}</span>
-                                            <span class="score">({grade.score}%)</span>
-                                        </li>
+                                    {#each student.results?.redo.filter(t => t.course === grade.course) as assignment}
+                                    <li>
+                                        <span class="course" style="color:{stringToHexColor(assignment.course)}">{assignment.course}</span>
+                                        <span class="assignment">{assignment.assignment}</span>
+                                        <span class="grade">{parseInt(assignment.grade)}</span>
+                                    </li>
                                     {/each}
                                 </ul>
+                                {/each}
                             </div>
                         {/if}
                     </div>
@@ -271,6 +274,12 @@
                     </div>
                 </div>
 
+                <div class="reason-section">
+                    <h4>All Grades</h4>
+                    {#each student.grades.filter(t => t.grade !== 'N/A') as grade}
+                    <h5 style="padding-left:1em;">{grade.course} | Grade {grade.grade} | {grade.score}%</h5>
+                    {/each}
+                </div>
             {/if}
         </article>
         {/each}
