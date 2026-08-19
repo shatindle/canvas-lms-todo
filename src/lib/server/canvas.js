@@ -459,7 +459,7 @@ query GetCourseAssignmentsAndSubmissions(
               due: dueDate,
               dateSubmitted: null
             });
-          } if (dueDate && dueDate.valueOf() < now.valueOf()) {
+          } else if (dueDate && dueDate.valueOf() < now.valueOf()) {
             data.late.push({
               course: course.name, 
               isSubmitted,

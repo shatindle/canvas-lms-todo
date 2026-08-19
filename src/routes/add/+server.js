@@ -14,7 +14,7 @@ export async function POST({ request }) {
 
     try {
         const student = await getStudentDetails(canvas_url, token);
-        return json({ success: true, id: student.id, name: student.name });
+        return json({ success: true, id: student.id, name: student.first_name });
     } catch {
         return json({ success: false, id: null, name: null });
     }

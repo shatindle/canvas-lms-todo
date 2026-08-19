@@ -12,6 +12,7 @@
     let toastMessage = $state("");
     let showSetup = $state(false);
     let isLoading = $state(true);
+    let expandedUpcoming = $state({});
 
     onMount(() => {
         isLoading = false;
@@ -53,7 +54,9 @@
                         canvas_url,
                         canvas_session, 
                         csrf_token,
-                        log_session_id
+                        log_session_id,
+                        name: data.name,
+                        id: data.id
                     }),
                     expires: Date.now() + 180 * 24 * 60 * 60 * 1000
                 });
@@ -86,6 +89,7 @@
     // }
 
     const isDone = (grades, results) => {
+        if (!grades || !results) return "error";
         const allAs = grades.filter(t => t.grade !== 'A' && t.grade !== 'N/A').length === 0;
         const noLateAssignments = !results.late.length;
         const noDueAssignments = !results.due.length;
@@ -105,6 +109,10 @@
             await invalidateAll();
         }
     };
+
+    const sortByDate = (items) => {
+        return items.sort((a, b) => new Date(a.due) - new Date(b.due));
+    }
 
 </script>
 
@@ -221,6 +229,29 @@
                         {/if}
                     </div>
                 {/if}
+                <div class="card-content">
+                    <div class="reason-section collapsible">
+                        <div class="collapsible-header" onclick={() => expandedUpcoming[student.id] = !expandedUpcoming[student.id]}>
+                            <h4>Upcoming assignments</h4>
+                            <span class="collapse-icon" class:expanded={expandedUpcoming[student.id]}>▶</span>
+                        </div>
+                        {#if expandedUpcoming[student.id]}
+                        <ul>
+                            {#each sortByDate(student.results.upcoming.filter(t => t.due && t.due < new Date(Date.now() + 3 * 24 * 60 * 60 * 1000))) as assignment}
+                                <li 
+                                    class:tomorrow={new Date(assignment.due).toLocaleString("en-US", { timeZone: "America/Los_Angeles" }).split(',')[0] === new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleString("en-US", { timeZone: "America/Los_Angeles" }).split(',')[0]}
+                                    class:twodays={new Date(assignment.due).toLocaleString("en-US", { timeZone: "America/Los_Angeles" }).split(',')[0] === new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toLocaleString("en-US", { timeZone: "America/Los_Angeles" }).split(',')[0]}
+                                    class:threedays={new Date(assignment.due).toLocaleString("en-US", { timeZone: "America/Los_Angeles" }).split(',')[0] === new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toLocaleString("en-US", { timeZone: "America/Los_Angeles" }).split(',')[0]}>
+                                    <span class="course">{assignment.course}</span>
+                                    <span class="assignment">{assignment.assignment}</span>
+                                    <span class="due-date">{assignment.due?.toDateString()}</span>
+                                </li>
+                            {/each}
+                        </ul>
+                        {/if}
+                    </div>
+                </div>
+
             {/if}
         </article>
         {/each}
@@ -412,7 +443,7 @@
         padding: 0.75rem;
         margin-bottom: 0.5rem;
         background-color: #f9f9f9;
-        border-left: 3px solid #007bff;
+        border-left: 3px solid #ff0000;
         border-radius: 4px;
         display: flex;
         flex-direction: column;
@@ -421,6 +452,18 @@
 
     .reason-section li:last-child {
         margin-bottom: 0;
+    }
+
+    .reason-section li.tomorrow {
+        border-left: 3px solid #acd4ff !important;
+    }
+
+    .reason-section li.twodays {
+        border-left: 3px solid #deeeff !important;
+    }
+
+    .reason-section li.threedays {
+        border-left: 3px solid #eef6ff !important;
     }
 
     .course {
@@ -697,5 +740,34 @@
         to {
             transform: rotate(360deg);
         }
+    }
+
+    .collapsible-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        user-select: none;
+        margin-bottom: 1em;
+    }
+
+    .collapsible-header:hover {
+        opacity: 0.8;
+    }
+
+    .collapsible-header h4 {
+        margin: 0;
+        flex: 1;
+    }
+
+    .collapse-icon {
+        display: inline-block;
+        transition: transform 0.2s ease;
+        color: #666;
+        font-size: 0.8rem;
+    }
+
+    .collapse-icon.expanded {
+        transform: rotate(90deg);
     }
 </style>
