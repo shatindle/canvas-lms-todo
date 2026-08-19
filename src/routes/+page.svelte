@@ -61,7 +61,6 @@
                     expires: Date.now() + 180 * 24 * 60 * 60 * 1000
                 });
 
-                canvas_url = "";
                 canvas_session = "";
                 csrf_token = "";
                 log_session_id = "";
