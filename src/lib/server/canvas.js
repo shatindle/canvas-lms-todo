@@ -16,7 +16,7 @@ export const getToken = (canvas_session, csrf_token, log_session_id) => {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
     // MANDATORY: Canvas blocks scripts missing an identifiable User-Agent
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) NodeJS/Fetch'
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) LMS-TODO-App'
   };
 }
 
