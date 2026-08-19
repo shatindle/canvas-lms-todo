@@ -448,7 +448,7 @@ query GetCourseAssignmentsAndSubmissions(
             dateSubmitted: null
           });
         } else {
-           if (dueDate && dueDate.toDateString() === now.toDateString()) {
+           if (dueDate && dueDate.toLocaleString("en-US", { timeZone: "America/Los_Angeles" }).split(',')[0] === now.toLocaleString("en-US", { timeZone: "America/Los_Angeles" }).split(',')[0]) {
             data.due.push({
               course: course.name, 
               isSubmitted,
@@ -457,7 +457,7 @@ query GetCourseAssignmentsAndSubmissions(
               due: dueDate,
               dateSubmitted: null
             });
-          } if (dueDate && dueDate < now) {
+          } if (dueDate && dueDate.valueOf() < now.valueOf()) {
             data.late.push({
               course: course.name, 
               isSubmitted,
