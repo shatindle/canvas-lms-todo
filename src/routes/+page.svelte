@@ -251,6 +251,10 @@
                     </div>
                     <br/>
                     <div class="setup-inputs">
+                        <label for="canvas_url">
+                            Canvas URL
+                            <input type="text" bind:value={canvas_url} required />
+                        </label>
                         <label for="canvas_session">
                             canvas_session
                             <input type="text" bind:value={canvas_session} required />
