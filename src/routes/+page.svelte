@@ -4,6 +4,7 @@
     
     let { data } = $props();
 
+    let canvas_url = $state("");
     let canvas_session = $state("");
     let csrf_token = $state("");
     let log_session_id = $state("");
@@ -17,6 +18,9 @@
     });
 
     const validate = async () => {
+        if (!canvas_url) 
+            return toastMessage = "Canvas base URL must be provided";
+
         if (!canvas_session) 
             return toastMessage = "Canvas Session must be provided";
 
@@ -32,6 +36,7 @@
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
+                canvas_url,
                 csrf_token,
                 canvas_session,
                 log_session_id
@@ -45,6 +50,7 @@
                 await cookieStore.set({
                     name: `student_${data.id}`,
                     value: JSON.stringify({ 
+                        canvas_url,
                         canvas_session, 
                         csrf_token,
                         log_session_id
@@ -52,6 +58,7 @@
                     expires: Date.now() + 180 * 24 * 60 * 60 * 1000
                 });
 
+                canvas_url = "";
                 canvas_session = "";
                 csrf_token = "";
                 log_session_id = "";
@@ -118,6 +125,10 @@
             <h2>Setup student</h2>
             <article>
                 <div class="setup-inputs">
+                    <label for="canvas_url">
+                        Canvas URL
+                        <input type="text" bind:value={canvas_url} required />
+                    </label>
                     <label for="canvas_session">
                         Canvas Session
                         <input type="text" bind:value={canvas_session} required />

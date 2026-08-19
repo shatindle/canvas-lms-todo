@@ -1,5 +1,4 @@
 import { getToken, getStudentDetails, fetchMyGrades, getAllDueAssignments } from '$lib/server/canvas.js';
-import { env } from '$env/dynamic/private';
 
 export const load = async ({ cookies }) => {
     const allCookies = cookies.getAll();
@@ -16,10 +15,10 @@ export const load = async ({ cookies }) => {
             const token = getToken(studentInfo.canvas_session, studentInfo.csrf_token, studentInfo.log_session_id);
             
             try {
-                const student = await getStudentDetails(env.canvas_url, token);
+                const student = await getStudentDetails(studentInfo.canvas_url, token);
 
                 if (student) {
-                    const grades = await fetchMyGrades(env.canvas_url, token, student.id);
+                    const grades = await fetchMyGrades(studentInfo.canvas_url, token, student.id);
 
                     if (!grades) {
                         students.push({
@@ -32,7 +31,7 @@ export const load = async ({ cookies }) => {
                         continue;
                     }
 
-                    const results = await getAllDueAssignments(env.canvas_url, token, student.id);
+                    const results = await getAllDueAssignments(studentInfo.canvas_url, token, student.id);
 
                     if (!results) {
                         students.push({
