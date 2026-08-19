@@ -121,9 +121,14 @@ query GetStudentGradesPaginated($userId: ID!, $after: String) {
 }
 
 function getDateByDayName(rangeStart, rangeEnd, targetDayName) {
+  if (!targetDayName) return null;
+
   const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
   const targetIndex = days.findIndex(day => day.toLowerCase() === targetDayName.toLowerCase());
   
+  if (new Date(rangeStart).getDay() === 5 && new Date(rangeEnd).getDay() === 5)
+    rangeStart = new Date(rangeStart.valueOf() + 3 * 24 * 60 * 60 * 1000 /*+ 23 * 60 * 60 * 1000*/);
+
   let current = new Date(rangeStart);
   
   while (current <= rangeEnd) {
@@ -138,26 +143,48 @@ function getDateByDayName(rangeStart, rangeEnd, targetDayName) {
 }
 
 function extractDateRange(text) {
-  // Regex to capture month, start day, end day, and year
-  const regex = /(January|February|March|April|May|June|July|August|September|October|November|December)\s(\d{1,2})-(\d{1,2}),\s(\d{4})/;
-  const match = text.match(regex);
+  const weekOfMatch = text.match(/Week of (\d{1,2})\/(\d{1,2})\/(\d{4})/i);
 
-  if (match) {
-    const [_, month, startDay, endDay, year] = match;
+  if (weekOfMatch) {
+    const [_, month, day, year] = weekOfMatch;
+
+    const startDate = new Date(`${month} ${day}, ${year}`);
+    const endDate = new Date(startDate.valueOf() + 5 * 24 * 60 * 60 * 1000);
+
+    return (day) => getDateByDayName(startDate, endDate, day);
+  }
+
+  // Regex to capture month, start day, end day, and year
+  const monthDayMatch = text.match(/(January|February|March|April|May|June|July|August|September|October|November|December)\s(\d{1,2})-(\d{1,2}),\s(\d{4})/);
+
+  if (monthDayMatch) {
+    const [_, month, startDay, endDay, year] = monthDayMatch;
     
     // Create native JavaScript Date objects
     const startDate = new Date(`${month} ${startDay}, ${year}`);
     const endDate = new Date(`${month} ${endDay}, ${year}`);
 
-    const dateRange = {
-      start: startDate,
-      end: endDate,
-      relative: function() {
-
-      }
-    };
-
     return (day) => getDateByDayName(startDate, endDate, day);
+  }
+
+  const dueDaynameMonthDay = text.match(/due (Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday), (January|February|March|April|May|June|July|August|September|October|November|December) (\d{1,2})/i);
+
+  if (dueDaynameMonthDay) {
+    const [_, dayname, month, day] = dueDaynameMonthDay;
+
+    const startDate = new Date(`${month} ${day}, ${new Date().getFullYear()}`);
+
+    return () => startDate;
+  }
+
+  const monthDayYearMatch = text.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+
+  if (monthDayYearMatch && !text.match(/Update on (\d{1,2})\/(\d{1,2})\/(\d{4})/i)) {
+    const [_, month, day, year] = monthDayYearMatch;
+
+    const startDate = new Date(`${month} ${day}, ${year}`);
+
+    return () => startDate;
   }
 
   return () => null;
@@ -351,18 +378,29 @@ query GetCourseAssignmentsAndSubmissions(
     const dueDateLookup = {};
     const regex = /[A-Z][a-z]+ \d{1,2}-\d{1,2}, \d{4}/;
 
-    modules.forEach(module => {
-      const dateRangeComputer = extractDateRange(module.name);
+    let currentDay = null;
 
-      let currentDay = null;
+    modules.forEach(module => {
+      let dateRangeComputer = extractDateRange(module.name);
+
+      // sometimes we shouldn't clear this...
+      if (module.name.indexOf("Unit ") === 0)
+        currentDay = null;
 
       module.moduleItemsConnection?.nodes.forEach(moduleItem => {
-        const regex = /\((Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\)/i;
-        const match = moduleItem.title.match(regex);
+        const dayMatch = moduleItem.title.match(/\((Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\)/i);
+        const dateMatch = moduleItem.title.match(/\d{1,2}\/\d{1,2}\/\d{4}/);
 
-        if (match) currentDay = match[1];
-        else if (moduleItem.content.__typename === "Assignment" && currentDay) {
-          dueDateLookup[moduleItem.content.id] = dateRangeComputer(currentDay);
+        let moreSpecificDateComputer = extractDateRange(moduleItem.title);
+
+        if (dayMatch) currentDay = dayMatch[1];
+        else if (dateMatch) currentDay = dateMatch[0];
+
+        if (moreSpecificDateComputer("Monday") !== null) 
+          dateRangeComputer = moreSpecificDateComputer;
+        
+        if (moduleItem.content.__typename === "Assignment" && currentDay) {
+          dueDateLookup[moduleItem.content.id] = dateRangeComputer(currentDay) === null ? new Date(currentDay) : dateRangeComputer(currentDay);
         }
       });
     });
@@ -441,6 +479,15 @@ query GetCourseAssignmentsAndSubmissions(
             });
           }
         } else if (submission?.excused) {
+          data.notrequired.push({
+            course: course.name, 
+            isSubmitted,
+            grade,
+            assignment: assignment.name,
+            due: dueDate,
+            dateSubmitted: null
+          });
+        } else if (assignment.pointsPossible === 0 || assignment.name.toLowerCase().indexOf("optional") > -1) {
           data.notrequired.push({
             course: course.name, 
             isSubmitted,

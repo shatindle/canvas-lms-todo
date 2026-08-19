@@ -114,6 +114,26 @@
         return items.sort((a, b) => new Date(a.due) - new Date(b.due));
     }
 
+    function stringToHexColor(str) {
+
+        str += "abcd";
+        let hash = 0;
+        
+        // Generate a hash code from the string
+        for (let i = 0; i < str.length; i++) {
+            hash = str.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        
+        // Convert the hash into a 6-character hex color code
+        let color = '#';
+        for (let i = 0; i < 3; i++) {
+            const value = (hash >> (i * 8)) & 0xFF;
+            color += value.toString(16).padStart(2, '0');
+        }
+        
+        return color;
+    }
+
 </script>
 
 <svelte:head>
@@ -206,7 +226,7 @@
                                         <li>
                                             <span class="course">{assignment.course}</span>
                                             <span class="assignment">{assignment.assignment}</span>
-                                            <span class="due-date">{assignment.dueDate}</span>
+                                            <span class="due-date">{assignment.due?.toDateString()}</span>
                                         </li>
                                     {/each}
                                 </ul>
@@ -242,7 +262,7 @@
                                     class:tomorrow={new Date(assignment.due).toLocaleString("en-US", { timeZone: "America/Los_Angeles" }).split(',')[0] === new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleString("en-US", { timeZone: "America/Los_Angeles" }).split(',')[0]}
                                     class:twodays={new Date(assignment.due).toLocaleString("en-US", { timeZone: "America/Los_Angeles" }).split(',')[0] === new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toLocaleString("en-US", { timeZone: "America/Los_Angeles" }).split(',')[0]}
                                     class:threedays={new Date(assignment.due).toLocaleString("en-US", { timeZone: "America/Los_Angeles" }).split(',')[0] === new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toLocaleString("en-US", { timeZone: "America/Los_Angeles" }).split(',')[0]}>
-                                    <span class="course">{assignment.course}</span>
+                                    <span class="course" style="color:{stringToHexColor(assignment.course)}">{assignment.course}</span>
                                     <span class="assignment">{assignment.assignment}</span>
                                     <span class="due-date">{assignment.due?.toDateString()}</span>
                                 </li>
