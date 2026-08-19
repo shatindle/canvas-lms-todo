@@ -143,13 +143,93 @@ function getDateByDayName(rangeStart, rangeEnd, targetDayName) {
 }
 
 function extractDateRange(text) {
-  const weekOfMatch = text.match(/Week of (\d{1,2})\/(\d{1,2})\/(\d{4})/i);
+  const weekOfDayMatch = text.match(/Week of (\d{1,2})\/(\d{1,2})\/(\d{4})/i);
 
-  if (weekOfMatch) {
-    const [_, month, day, year] = weekOfMatch;
+  if (weekOfDayMatch) {
+    const [_, month, day, year] = weekOfDayMatch;
 
     const startDate = new Date(`${month} ${day}, ${year}`);
     const endDate = new Date(startDate.valueOf() + 5 * 24 * 60 * 60 * 1000);
+
+    if (text.toLowerCase().indexOf("week of") > -1) {
+      const includesDaysOfWeekWithLessonCallout = [...text.matchAll(/((Lesson \d+).*?\((Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday))\)/ig)];
+
+      if (includesDaysOfWeekWithLessonCallout.length) {
+        // this title includes days of the week.. our matching will have to become more sophisticated...
+        /*
+        * Example: 
+        * Week of August 14-21, 2026 Unit 1 Lesson 3 Physical Map & Assignment (Tuesday); Unit 1 Lesson 4 & Assignment (Thursday)
+        * U1: Lesson 3 Physical Map
+        * U1: Lesson 3 Assignment
+        * U1: Lesson 4 Road Map
+        * U1: Lesson 4 Assignment
+        */
+
+        return function (day, text) {
+          for (const subMatch of includesDaysOfWeekWithLessonCallout) {
+            if (text.indexOf(subMatch[2]) > -1) {
+              return getDateByDayName(startDate, endDate, subMatch[3]);
+            }
+          }
+
+          return getDateByDayName(startDate, endDate, day);
+        };
+      }
+
+      if (text.toLowerCase().indexOf("odd lesson") > -1 || text.toLowerCase().indexOf("even lesson") > -1) {
+        const evenOddLookahead = [...text.matchAll(/(even|odd).*?(Monday|Mon|Tuesday|Tues|Wednesday|Wed|Thursday|Thurs|Friday|Fri|Saturday|Sat|Sunday|Sun)(\/(Monday|Mon|Tuesday|Tues|Wednesday|Wed|Thursday|Thurs|Friday|Fri|Saturday|Sat|Sunday|Sun))?(\/(Monday|Mon|Tuesday|Tues|Wednesday|Wed|Thursday|Thurs|Friday|Fri|Saturday|Sat|Sunday|Sun))?(\/(Monday|Mon|Tuesday|Tues|Wednesday|Wed|Thursday|Thurs|Friday|Fri|Saturday|Sat|Sunday|Sun))?(\/(Monday|Mon|Tuesday|Tues|Wednesday|Wed|Thursday|Thurs|Friday|Fri|Saturday|Sat|Sunday|Sun))?/ig)];
+        // this title includes days of the week.. our matching will have to become more sophisticated...
+        /*
+        * Example: 
+        * Week of 8/17/2026 Odd Lesson Days are Mon/Wed (Assignment to Submit) Even Lessons on Tues/Thurs (Complete Zearn Lesson only)
+        * Lesson 5 <, >, or =? Assignment
+        * Lesson 6 Pattern Spotter
+        * Lesson 7 Round and Round
+        * Lesson 7 Round and Round Assignment
+        */
+
+        const iter = {
+          "even": 0,
+          "odd": 0
+        }
+
+        const isEven = (num) => num % 2 === 0;
+
+        return function (day, text, iterateCallCount = true) {
+          const lessonNum = text.match(/Lesson (\d+)/ig);
+          if (lessonNum) {
+            const lessonNumber = parseInt(lessonNum[0].replace(/\D/g, ""));
+            for (const subMatch of evenOddLookahead) {
+              if (subMatch[1].toLowerCase() === "even" && isEven(lessonNumber) ||
+                (subMatch[1].toLowerCase() === "odd" && !isEven(lessonNumber))) {
+                  
+                const localIter = (iter[subMatch[1].toLowerCase()] + 1) * 2;
+
+                if (iterateCallCount) {
+                  iter[subMatch[1].toLowerCase()] = iter[subMatch[1].toLowerCase()] + 1;
+                }
+
+                if (localIter < subMatch.length) {
+                  let thisDay = subMatch[localIter];
+
+                  if (thisDay === "Mon") thisDay = "Monday";
+                  else if (thisDay === "Tues") thisDay = "Tuesday";
+                  else if (thisDay === "Wed") thisDay = "Wednesday";
+                  else if (thisDay === "Thurs") thisDay = "Thursday";
+                  else if (thisDay === "Fri") thisDay = "Friday";
+                  else if (thisDay === "Sat") thisDay = "Saturday";
+                  else if (thisDay === "Sun") thisDay = "Sunday";
+
+                  return getDateByDayName(startDate, endDate, thisDay);
+                }
+              }
+            }
+          }
+
+          return getDateByDayName(startDate, endDate, day);
+        };
+      } else return (day) => getDateByDayName(startDate, endDate, day);
+    }
 
     return (day) => getDateByDayName(startDate, endDate, day);
   }
@@ -163,6 +243,34 @@ function extractDateRange(text) {
     // Create native JavaScript Date objects
     const startDate = new Date(`${month} ${startDay}, ${year}`);
     const endDate = new Date(`${month} ${endDay}, ${year}`);
+
+    if (text.toLowerCase().indexOf("week of") > -1) {
+      const includesDaysOfWeekWithLessonCallout = [...text.matchAll(/((Lesson \d+).*?\((Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday))\)/ig)];
+
+      if (includesDaysOfWeekWithLessonCallout.length) {
+        // this title includes days of the week.. our matching will have to become more sophisticated...
+        /*
+        * Example: 
+        * Week of August 14-21, 2026 Unit 1 Lesson 3 Physical Map & Assignment (Tuesday); Unit 1 Lesson 4 & Assignment (Thursday)
+        * U1: Lesson 3 Physical Map
+        * U1: Lesson 3 Assignment
+        * U1: Lesson 4 Road Map
+        * U1: Lesson 4 Assignment
+        */
+
+        return function (day, text) {
+          for (const subMatch of includesDaysOfWeekWithLessonCallout) {
+            if (text.indexOf(subMatch[2]) > -1) {
+              return getDateByDayName(startDate, endDate, subMatch[3]);
+            }
+          }
+
+          return getDateByDayName(startDate, endDate, day);
+        };
+      } 
+      
+      return (day) => getDateByDayName(startDate, endDate, day);
+    }
 
     return (day) => getDateByDayName(startDate, endDate, day);
   }
@@ -396,11 +504,11 @@ query GetCourseAssignmentsAndSubmissions(
         if (dayMatch) currentDay = dayMatch[1];
         else if (dateMatch) currentDay = dateMatch[0];
 
-        if (moreSpecificDateComputer("Monday") !== null) 
+        if (moreSpecificDateComputer("Monday", moduleItem.title, false) !== null) 
           dateRangeComputer = moreSpecificDateComputer;
         
-        if (moduleItem.content.__typename === "Assignment" && currentDay) {
-          dueDateLookup[moduleItem.content.id] = dateRangeComputer(currentDay) === null ? new Date(currentDay) : dateRangeComputer(currentDay);
+        if (moduleItem.content.__typename === "Assignment" && currentDay) { 
+          dueDateLookup[moduleItem.content.id] = dateRangeComputer(currentDay, moduleItem.title, false) === null ? new Date(currentDay) : dateRangeComputer(currentDay, moduleItem.title);
         }
       });
     });

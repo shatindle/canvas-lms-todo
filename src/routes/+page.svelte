@@ -204,29 +204,29 @@
             {:else}
                 {#if isDone(student.grades, student.results) !== "done"}
                     <div class="card-content">
-                        {#if !!student.results.due.length}
-                            <div class="reason-section">
-                                <h4>Assignments due</h4>
-                                <ul>
-                                    {#each student.results.due as assignment}
-                                        <li>
-                                            <span class="course">{assignment.course}</span>
-                                            <span class="assignment">{assignment.assignment}</span>
-                                        </li>
-                                    {/each}
-                                </ul>
-                            </div>
-                        {/if}
-                        
                         {#if !!student.results.late.length}
                             <div class="reason-section">
-                                <h4>Assignments late</h4>
+                                <h4>Late</h4>
                                 <ul>
                                     {#each student.results.late as assignment}
                                         <li>
                                             <span class="course">{assignment.course}</span>
                                             <span class="assignment">{assignment.assignment}</span>
                                             <span class="due-date">{assignment.due?.toDateString()}</span>
+                                        </li>
+                                    {/each}
+                                </ul>
+                            </div>
+                        {/if}
+
+                        {#if !!student.results.due.length}
+                            <div class="reason-section">
+                                <h4>Due today</h4>
+                                <ul>
+                                    {#each student.results.due as assignment}
+                                        <li>
+                                            <span class="course">{assignment.course}</span>
+                                            <span class="assignment">{assignment.assignment}</span>
                                         </li>
                                     {/each}
                                 </ul>
